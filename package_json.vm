@@ -13,6 +13,7 @@
     "ejs": "*",
     "express": "*",
     "sqlite": "*",
-    "bluebird": "*"
+    "bluebird": "*",
+    "mssql": "^5.1.0"
   }
 }

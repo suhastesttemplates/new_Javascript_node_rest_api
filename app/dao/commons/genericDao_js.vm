@@ -5,6 +5,14 @@
 
 // Load bluebird Promise
 const Promise = require('bluebird');
+var sql = require("mssql");
+
+const dbConfig = {
+    user: '<DB_USER>',
+    password: '<DB_PWD>',
+    server: '<DB_SERVER>',
+    database: '<DB_NAME>'
+};
 
 /**
  * DAOs Common functions
@@ -12,20 +20,20 @@ const Promise = require('bluebird');
 module.exports = class GenericDAO {
 
     constructor(
-        sqlSelectById, 
-        sqlSelectAll, 
+        sqlSelectById,
+        sqlSelectAll,
         sqlCount,
-		sqlInsert, 
-        sqlUpdate, 
-        sqlDelete, 
+        sqlInsert,
+        sqlUpdate,
+        sqlDelete,
         sqlExist) {
-		// Load database & database configuration
-        this.getDatabase = require('../../config/dbCreateTables');
+        // Load database & database configuration
+        // this.getDatabase = require('../../config/dbCreateTables');
 
         this.sqlSelectById = sqlSelectById;
         this.sqlSelectAll = sqlSelectAll;
         this.sqlCount = sqlCount;
-		this.sqlInsert = sqlInsert;
+        this.sqlInsert = sqlInsert;
         this.sqlUpdate = sqlUpdate;
         this.sqlDelete = sqlDelete;
         this.sqlExist = sqlExist;
@@ -37,14 +45,39 @@ module.exports = class GenericDAO {
      * @returns Promise
      */
     findAll() {
+        var query = this.sqlSelectAll;
         return new Promise(function (resolve, reject) {
-            this.getDatabase().all(this.sqlSelectAll, function (err, rows) {
+            sql.connect(dbConfig, function (err) {
                 if (err) {
+                    console.log("Error while connecting database :- " + err);
                     reject(err);
-                } else {
-                    resolve(rows);
+                }
+                else {
+                    // create Request object
+                    var request = new sql.Request();
+                    // query to the database
+                    request.query(query, function (err, response) {
+                        if (err) {
+                            console.log("Error while querying database :- " + err);
+                            reject(err);
+                        }
+                        else {
+                            console.log("received response:");
+                            console.log(response);
+                            resolve(response);
+                        }
+                    });
                 }
             });
+
+
+            // this.getDatabase().all(this.sqlSelectAll, function (err, rows) {
+            //     if (err) {
+            //         reject(err);
+            //     } else {
+            //         resolve(rows);
+            //     }
+            // });
         }.bind(this));
     }
 
@@ -55,17 +88,80 @@ module.exports = class GenericDAO {
      */
     findOne(sqlParams) {
         return new Promise(function (resolve, reject) {
-            let findQuery = this.getDatabase().prepare(this.sqlSelectById);
-            findQuery.all(sqlParams, function (err, rows) {
+            
+            sql.connect(dbConfig, function (err) {
                 if (err) {
+                    console.log("Error while connecting database :- " + err);
                     reject(err);
-                } else if (rows === null || rows.length === 0) {
-                    resolve(null);
-                } else {
-                    let row = rows[0];
-                    resolve(row);
                 }
-            })
+                else {
+                    // create Request object
+                    var request = new sql.Request();
+                    // query to the database
+                    request.query(this.sqlSelectById, function (err, response) {
+                        if (err) {
+                            console.log("Error while querying database :- " + err);
+                            reject(err);
+                        }
+                        else {
+                            resolve(response);
+                        }
+                    });
+                }
+            });
+
+
+            // let findQuery = this.getDatabase().prepare(this.sqlSelectById);
+            // findQuery.all(sqlParams, function (err, rows) {
+            //     if (err) {
+            //         reject(err);
+            //     } else if (rows === null || rows.length === 0) {
+            //         resolve(null);
+            //     } else {
+            //         let row = rows[0];
+            //         resolve(row);
+            //     }
+            // })
+        }.bind(this));
+    }
+
+    /**
+     * Execute the sqlCount query
+     * @returns Promise
+     */
+    countAll() {
+        return new Promise(function (resolve, reject) {
+
+            sql.connect(dbConfig, function (err) {
+                if (err) {
+                    console.log("Error while connecting database :- " + err);
+                    reject(err);
+                }
+                else {
+                    // create Request object
+                    var request = new sql.Request();
+                    // query to the database
+                    request.query(this.sqlCount, function (err, response) {
+                        if (err) {
+                            console.log("Error while querying database :- " + err);
+                            reject(err);
+                        }
+                        else {
+                            resolve(response);
+                        }
+                    });
+                }
+            });
+
+            // this.getDatabase().all(this.sqlCount, function (err, count) {
+            //     console.log('this is count : ', count);
+            //     console.log('this is err : ', err);
+            //     if (err) {
+            //         reject(err);
+            //     } else {
+            //         resolve(count);
+            //     }
+            // });
         }.bind(this));
     }
 
@@ -76,16 +172,37 @@ module.exports = class GenericDAO {
      */
     existsOne(sqlParams) {
         return new Promise((resolve, reject) => {
-            let existQuery = this.getDatabase().prepare(this.sqlExist);
-            existQuery.each(sqlParams, function (err, row) {
+            sql.connect(dbConfig, function (err) {
                 if (err) {
+                    console.log("Error while connecting database :- " + err);
                     reject(err);
-                } else if (row && row.found === 1) {
-                    resolve(true);
-                } else {
-                    resolve(false);
                 }
-            })
+                else {
+                    // create Request object
+                    var request = new sql.Request();
+                    // query to the database
+                    request.query(this.sqlExist, function (err, response) {
+                        if (err) {
+                            console.log("Error while querying database :- " + err);
+                            reject(err);
+                        }
+                        else {
+                            resolve(response);
+                        }
+                    });
+                }
+            });
+
+            // let existQuery = this.getDatabase().prepare(this.sqlExist);
+            // existQuery.each(sqlParams, function (err, row) {
+            //     if (err) {
+            //         reject(err);
+            //     } else if (row && row.found === 1) {
+            //         resolve(true);
+            //     } else {
+            //         resolve(false);
+            //     }
+            // })
         });
     }
 
@@ -96,25 +213,45 @@ module.exports = class GenericDAO {
      */
     insert(sqlParams) {
         return new Promise(function (resolve, reject) {
-            let insertQuery = this.getDatabase().prepare(this.sqlInsert);
-            
-            /* Abort due to constraint violation
-             * List of errorno : https://sqlite.org/c3ref/c_abort.html
-             */
-            let CONSTRAINT_DUPLICATE_KEY = 19;
-
-            insertQuery.run(sqlParams, function (err) {
-                // if changes happen in databse
-                if (this.changes === 1) {
-                    resolve(this.lastID);
-                } else {
-                    if (err.errno === CONSTRAINT_DUPLICATE_KEY) {
-                        resolve(null);
-                    } else {
-                        reject(err);
-                    }
+            sql.connect(dbConfig, function (err) {
+                if (err) {
+                    console.log("Error while connecting database :- " + err);
+                    reject(err);
+                }
+                else {
+                    // create Request object
+                    var request = new sql.Request();
+                    // query to the database
+                    request.query(this.sqlInsert, function (err, response) {
+                        if (err) {
+                            console.log("Error while querying database :- " + err);
+                            reject(err);
+                        }
+                        else {
+                            resolve(response);
+                        }
+                    });
                 }
             });
+            // let insertQuery = this.getDatabase().prepare(this.sqlInsert);
+
+            // /* Abort due to constraint violation
+            //  * List of errorno : https://sqlite.org/c3ref/c_abort.html
+            //  */
+            // let CONSTRAINT_DUPLICATE_KEY = 19;
+
+            // insertQuery.run(sqlParams, function (err) {
+            //     // if changes happen in databse
+            //     if (this.changes === 1) {
+            //         resolve(this.lastID);
+            //     } else {
+            //         if (err.errno === CONSTRAINT_DUPLICATE_KEY) {
+            //             resolve(null);
+            //         } else {
+            //             reject(err);
+            //         }
+            //     }
+            // });
         }.bind(this));
     }
 
@@ -125,17 +262,41 @@ module.exports = class GenericDAO {
      */
     update(sqlParams) {
         return new Promise(function (resolve, reject) {
-            let updateQuery = this.getDatabase().prepare(this.sqlUpdate);
 
-            updateQuery.run(sqlParams, function (err) {
+
+            sql.connect(dbConfig, function (err) {
                 if (err) {
+                    console.log("Error while connecting database :- " + err);
                     reject(err);
-                } else if (this.changes === 1) {
-                    resolve(true);
-                } else {
-                    resolve(false);
+                }
+                else {
+                    // create Request object
+                    var request = new sql.Request();
+                    // query to the database
+                    request.query(this.sqlUpdate, function (err, response) {
+                        if (err) {
+                            console.log("Error while querying database :- " + err);
+                            reject(err);
+                        }
+                        else {
+                            resolve(response);
+                        }
+                    });
                 }
             });
+
+
+            // let updateQuery = this.getDatabase().prepare(this.sqlUpdate);
+
+            // updateQuery.run(sqlParams, function (err) {
+            //     if (err) {
+            //         reject(err);
+            //     } else if (this.changes === 1) {
+            //         resolve(true);
+            //     } else {
+            //         resolve(false);
+            //     }
+            // });
         }.bind(this));
     }
 
@@ -146,17 +307,62 @@ module.exports = class GenericDAO {
      */
     delete(sqlParams) {
         return new Promise(function (resolve, reject) {
-            let deleteQuery = this.getDatabase().prepare(this.sqlDelete);
 
-            deleteQuery.run(sqlParams, function (err) {
+            sql.connect(dbConfig, function (err) {
                 if (err) {
+                    console.log("Error while connecting database :- " + err);
                     reject(err);
-                } else if (this.changes === 1) {
-                    resolve(true);
-                } else {
-                    resolve(false);
+                }
+                else {
+                    // create Request object
+                    var request = new sql.Request();
+                    // query to the database
+                    request.query(this.sqlDelete, function (err, response) {
+                        if (err) {
+                            console.log("Error while querying database :- " + err);
+                            reject(err);
+                        }
+                        else {
+                            resolve(response);
+                        }
+                    });
                 }
             });
+
+            // let deleteQuery = this.getDatabase().prepare(this.sqlDelete);
+
+            // deleteQuery.run(sqlParams, function (err) {
+            //     if (err) {
+            //         reject(err);
+            //     } else if (this.changes === 1) {
+            //         resolve(true);
+            //     } else {
+            //         resolve(false);
+            //     }
+            // });
         }.bind(this));
+    }
+
+    executeQuery(query) {
+        sql.connect(dbConfig, function (err) {
+            if (err) {
+                console.log("Error while connecting database :- " + err);
+                return err;
+            }
+            else {
+                // create Request object
+                var request = new sql.Request();
+                // query to the database
+                request.query(query, function (err, response) {
+                    if (err) {
+                        console.log("Error while querying database :- " + err);
+                        return (err);
+                    }
+                    else {
+                        resolve(response);
+                    }
+                });
+            }
+        });
     }
 };

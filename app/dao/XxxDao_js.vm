@@ -164,7 +164,7 @@ module.exports = class ${entity.name}Dao {
         return this.genericDao.findAll().then(rows => {
             let ${uncapitalizedEntityName}s = [];
             if (rows) {
-                for (const row of rows) {
+                for (const recordset of rows.recordset) {
                     ${uncapitalizedEntityName}s.push(new ${entity}($modelRows));
                 }
             }
@@ -177,7 +177,7 @@ module.exports = class ${entity.name}Dao {
      * @return count
      */
     countAll() {
-        return this.genericDao.findOne();
+        return this.genericDao.countAll();
     };
 
     /**
