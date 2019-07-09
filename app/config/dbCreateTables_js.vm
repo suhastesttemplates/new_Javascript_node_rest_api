@@ -8,7 +8,7 @@
 /**
  * Database tables creation
  */
-//let db;
+let db;
 
 /**
  * Init entities tables if they don't exist
